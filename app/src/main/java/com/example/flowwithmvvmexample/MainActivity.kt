@@ -3,8 +3,10 @@ package com.example.flowwithmvvmexample
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.example.flowwithmvvmexample.databinding.ActivityMainBinding
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
@@ -37,22 +39,26 @@ class MainActivity : AppCompatActivity() {
 
     private fun bindViewModel() {
         lifecycleScope.launch {
-            viewModel.outputs.selectedOption.collect {
-                binding.textView.text = it
-                hideSelectionBottomSheet()
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.outputs.selectedOption.collect {
+                    binding.textView.text = it
+                    hideSelectionBottomSheet()
+                }
             }
         }
 
         lifecycleScope.launch {
-            viewModel.outputs.text.collect {
-                binding.button.isEnabled = it.isNotEmpty()
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.outputs.enableButton.collect {
+                    binding.button.isEnabled = it
+                }
             }
         }
         lifecycleScope.launch {
-            viewModel.outputs.didClickButton.withLatestFrom(viewModel.outputs.text) { _, b ->
-                return@withLatestFrom b
-            }.filter { it.isNotEmpty() }.collect {
-                showSelectionBottomSheet()
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.outputs.showBottomSheet.collect {
+                    showSelectionBottomSheet()
+                }
             }
         }
     }

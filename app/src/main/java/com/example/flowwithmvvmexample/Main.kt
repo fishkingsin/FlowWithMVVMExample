@@ -1,12 +1,11 @@
 package com.example.flowwithmvvmexample
 
-import androidx.lifecycle.*
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicReference
 
@@ -38,16 +37,21 @@ interface Main {
     interface Inputs {
         fun setText(text: CharSequence): Job
         fun setOption1(option: String): Job
+        fun enable1(value: Boolean): Job
+        fun enable2(value: Boolean): Job
+        fun enable3(value: Boolean): Job
         fun getOptions2(): Job
         fun onButtonClick(): Job
     }
 
     interface Outputs {
+        val enableButton: Flow<Boolean>
         val text: Flow<String>
         val options1: SharedFlow<List<String>>
         val selectedOption: Flow<String>
         val options2: Flow<List<String>>
         val didClickButton: SharedFlow<Unit>
+        val showBottomSheet: Flow<String>
     }
 
     interface ViewModelType {
@@ -55,14 +59,15 @@ interface Main {
         val outputs: Outputs
     }
 
-    class ViewModel: androidx.lifecycle.ViewModel(), LifecycleObserver, ViewModelType, Inputs, Outputs {
+    class ViewModel : androidx.lifecycle.ViewModel(), LifecycleObserver, ViewModelType, Inputs,
+        Outputs {
         override val inputs: Inputs
             get() = this
         override val outputs: Outputs
             get() = this
 
 
-        override fun setText(text: CharSequence): Job = launchUI{
+        override fun setText(text: CharSequence): Job = launchUI {
             _text.emit(text.toString())
         }
 
@@ -70,18 +75,43 @@ interface Main {
             _selectedOption.emit(option)
         }
 
+        override fun enable1(value: Boolean): Job = launchUI {
+            _enable1.emit(value)
+        }
+
+        override fun enable2(value: Boolean): Job = launchUI {
+            _enable2.emit(value)
+        }
+
+        override fun enable3(value: Boolean): Job = launchUI {
+            _enable3.emit(value)
+        }
+
         override fun getOptions2() = launchUI {
 
         }
 
         override fun onButtonClick(): Job = launchUI {
-            _didClikcButton.emit(Unit)
+            _didClickButton.emit(Unit)
             _options2.emit(mutableListOf("1", "2", "3", "4", "5"))
         }
+
+        override val enableButton: Flow<Boolean>
+            get() = combine(
+                _text,
+                _enable1,
+                _enable2,
+                _enable3,
+            ) { a, b, c, d ->
+                return@combine !a.isNullOrEmpty() && b == true && c == true && d == true
+            }
 
         override val text: Flow<String>
             get() = _text.filterNotNull()
         private val _text: MutableStateFlow<String?> = MutableStateFlow("")
+        private val _enable1: MutableStateFlow<Boolean?> = MutableStateFlow(null)
+        private val _enable2: MutableStateFlow<Boolean?> = MutableStateFlow(null)
+        private val _enable3: MutableStateFlow<Boolean?> = MutableStateFlow(null)
 
         override val options1: SharedFlow<List<String>>
             get() = _options1
@@ -94,14 +124,19 @@ interface Main {
             get() = _options2.mapNotNull { it }
 
         override val didClickButton: SharedFlow<Unit>
-            get() = _didClikcButton
-        private val _didClikcButton: MutableSharedFlow<Unit> = MutableSharedFlow(replay = 0)
+            get() = _didClickButton
+        override val showBottomSheet: Flow<String>
+            get() = didClickButton
+                .withLatestFrom(text) { _, b ->
+                    return@withLatestFrom b
+                }.filter { it.isNotEmpty() }
+        private val _didClickButton: MutableSharedFlow<Unit> = MutableSharedFlow(replay = 0)
 
         protected val error by lazy { MutableLiveData<Exception>() }
 
         protected val finally by lazy { MutableLiveData<Int>() }
 
-        private fun launchUI(block: suspend CoroutineScope.() -> Unit) : Job = viewModelScope.async {
+        private fun launchUI(block: suspend CoroutineScope.() -> Unit): Job = viewModelScope.async {
             try {
                 block()
             } catch (e: Exception) {
