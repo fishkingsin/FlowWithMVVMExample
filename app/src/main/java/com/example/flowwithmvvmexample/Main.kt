@@ -1,5 +1,6 @@
 package com.example.flowwithmvvmexample
 
+import android.view.View
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -51,7 +52,9 @@ interface Main {
         val selectedOption: Flow<String>
         val options2: Flow<List<String>>
         val didClickButton: SharedFlow<Unit>
+        val progressBarVisibility: Flow<Int>
         val showBottomSheet: Flow<String>
+        val bottomsheetOptions: Flow<Pair<List<String>, String?>>
     }
 
     interface ViewModelType {
@@ -93,7 +96,10 @@ interface Main {
 
         override fun onButtonClick(): Job = launchUI {
             _didClickButton.emit(Unit)
+            _progressBarVisibility.emit(true)
+            delay(3000)
             _options2.emit(mutableListOf("1", "2", "3", "4", "5"))
+            _progressBarVisibility.emit(false)
         }
 
         override val enableButton: Flow<Boolean>
@@ -119,12 +125,20 @@ interface Main {
         override val selectedOption: Flow<String>
             get() = _selectedOption.filterNotNull()
         private val _selectedOption: MutableStateFlow<String?> = MutableStateFlow(null)
+        override val bottomsheetOptions: Flow<Pair<List<String>, String?>>
+            get() = options2.combine(_selectedOption) { a, b ->
+                return@combine Pair(a, b)
+            }
+
         private val _options2: MutableStateFlow<List<String>?> = MutableStateFlow(null)
         override val options2: Flow<List<String>>
             get() = _options2.mapNotNull { it }
 
         override val didClickButton: SharedFlow<Unit>
             get() = _didClickButton
+        private val _progressBarVisibility: MutableStateFlow<Boolean?> = MutableStateFlow(null)
+        override val progressBarVisibility: Flow<Int>
+            get() = _progressBarVisibility.filterNotNull().map { if (it) View.VISIBLE else View.INVISIBLE }
         override val showBottomSheet: Flow<String>
             get() = didClickButton
                 .withLatestFrom(text) { _, b ->
