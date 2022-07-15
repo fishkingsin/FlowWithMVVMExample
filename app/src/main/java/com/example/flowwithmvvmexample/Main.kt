@@ -54,6 +54,9 @@ interface Main {
         val didClickButton: SharedFlow<Unit>
         val progressBarVisibility: Flow<Int>
         val showBottomSheet: Flow<String>
+        val enable1: Flow<Boolean>
+        val enable2: Flow<Boolean>
+        val enable3: Flow<Boolean>
         val bottomsheetOptions: Flow<Pair<List<String>, String?>>
     }
 
@@ -115,9 +118,9 @@ interface Main {
         override val text: Flow<String>
             get() = _text.filterNotNull()
         private val _text: MutableStateFlow<String?> = MutableStateFlow("")
-        private val _enable1: MutableStateFlow<Boolean?> = MutableStateFlow(null)
-        private val _enable2: MutableStateFlow<Boolean?> = MutableStateFlow(null)
-        private val _enable3: MutableStateFlow<Boolean?> = MutableStateFlow(null)
+        private val _enable1: MutableStateFlow<Boolean?> = MutableStateFlow(false)
+        private val _enable2: MutableStateFlow<Boolean?> = MutableStateFlow(false)
+        private val _enable3: MutableStateFlow<Boolean?> = MutableStateFlow(false)
 
         override val options1: SharedFlow<List<String>>
             get() = _options1
@@ -144,6 +147,18 @@ interface Main {
                 .withLatestFrom(text) { _, b ->
                     return@withLatestFrom b
                 }.filter { it.isNotEmpty() }
+        override val enable1: Flow<Boolean>
+            get() = _enable1.filterNotNull().combine(_text.filterNotNull()) { enable1, text ->
+                enable1 && text.isNotEmpty()
+            }
+        override val enable2: Flow<Boolean>
+            get() = _enable2.filterNotNull().combine(enable1) { enable2, enable1 ->
+                enable1 && enable2
+            }
+        override val enable3: Flow<Boolean>
+            get() = _enable3.filterNotNull().combine(enable2) { enable3, enable2 ->
+                enable2 && enable3
+            }
         private val _didClickButton: MutableSharedFlow<Unit> = MutableSharedFlow(replay = 0)
 
         protected val error by lazy { MutableLiveData<Exception>() }

@@ -61,6 +61,43 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.outputs.text.collect {
+
+                    binding.switch1.isEnabled = it.isNotEmpty()
+
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.outputs.enable1.collect {
+
+                        binding.switch1.isChecked = it
+                        binding.switch2.isEnabled = it
+                        binding.switch3.isEnabled = it
+
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.outputs.enable2.collect {
+                    binding.switch2.isChecked = it
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.outputs.enable3.collect {
+                    binding.switch3.isChecked = it
+                }
+            }
+        }
     }
 
     private fun showSelectionBottomSheet() {
