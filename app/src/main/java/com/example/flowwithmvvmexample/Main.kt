@@ -68,7 +68,7 @@ interface Main {
         val outputs: Outputs
     }
 
-    class ViewModel : androidx.lifecycle.ViewModel(), LifecycleObserver, ViewModelType, Inputs,
+    open class ViewModel : androidx.lifecycle.ViewModel(), LifecycleObserver, ViewModelType, Inputs,
         Outputs {
         override val inputs: Inputs
             get() = this
@@ -104,7 +104,7 @@ interface Main {
             _options2.emit(emptyList())
             _didClickButton.emit(Unit)
             _progressBarVisibility.emit(true)
-            delay(3000)
+            delay(2000)
             _options2.emit(mutableListOf("1", "2", "3", "4", "5"))
             _progressBarVisibility.emit(false)
         }
@@ -133,13 +133,13 @@ interface Main {
             get() = _selectedOption.filterNotNull()
         private val _selectedOption: MutableStateFlow<String?> = MutableStateFlow(null)
         override val bottomsheetOptions: Flow<Pair<List<String>, String?>>
-            get() = options2.combine(_selectedOption) { a, b ->
+            get() = _options2.filterNotNull().combine(_selectedOption.filterNotNull()) { a, b ->
                 return@combine Pair(a, b)
             }
 
         private val _options2: MutableStateFlow<List<String>?> = MutableStateFlow(null)
         override val options2: Flow<List<String>>
-            get() = _options2.mapNotNull { it }
+            get() = _options2.filterNotNull()
 
         override val didClickButton: SharedFlow<Unit>
             get() = _didClickButton
@@ -178,9 +178,9 @@ interface Main {
             }
         private val _didClickButton: MutableSharedFlow<Unit> = MutableSharedFlow(replay = 0)
 
-        protected val error by lazy { MutableLiveData<Exception>() }
+        private val error by lazy { MutableLiveData<Exception>() }
 
-        protected val finally by lazy { MutableLiveData<Int>() }
+        private val finally by lazy { MutableLiveData<Int>() }
 
         private fun launchUI(block: suspend CoroutineScope.() -> Unit): Job = viewModelScope.async {
             try {
