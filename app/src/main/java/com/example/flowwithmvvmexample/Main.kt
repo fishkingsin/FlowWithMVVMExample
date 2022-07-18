@@ -54,7 +54,10 @@ interface Main {
         val didClickButton: SharedFlow<Unit>
         val progressBarVisibility: Flow<Int>
         val showBottomSheet: Flow<String>
-        val enable1: Flow<Boolean>
+        val switch1Value: Flow<Boolean>
+        val switch1Enabled: Flow<Boolean>
+        val switch2Enabled: Flow<Boolean>
+        val switch3Enabled: Flow<Boolean>
         val enable2: Flow<Boolean>
         val enable3: Flow<Boolean>
         val bottomsheetOptions: Flow<Pair<List<String>, String?>>
@@ -82,7 +85,7 @@ interface Main {
         }
 
         override fun enable1(value: Boolean): Job = launchUI {
-            _enable1.emit(value)
+            _switch1Value.emit(value)
         }
 
         override fun enable2(value: Boolean): Job = launchUI {
@@ -98,6 +101,7 @@ interface Main {
         }
 
         override fun onButtonClick(): Job = launchUI {
+            _options2.emit(emptyList())
             _didClickButton.emit(Unit)
             _progressBarVisibility.emit(true)
             delay(3000)
@@ -108,7 +112,7 @@ interface Main {
         override val enableButton: Flow<Boolean>
             get() = combine(
                 _text,
-                _enable1,
+                _switch1Value,
                 _enable2,
                 _enable3,
             ) { a, b, c, d ->
@@ -118,7 +122,7 @@ interface Main {
         override val text: Flow<String>
             get() = _text.filterNotNull()
         private val _text: MutableStateFlow<String?> = MutableStateFlow("")
-        private val _enable1: MutableStateFlow<Boolean?> = MutableStateFlow(false)
+        private val _switch1Value: MutableStateFlow<Boolean?> = MutableStateFlow(false)
         private val _enable2: MutableStateFlow<Boolean?> = MutableStateFlow(false)
         private val _enable3: MutableStateFlow<Boolean?> = MutableStateFlow(false)
 
@@ -139,20 +143,33 @@ interface Main {
 
         override val didClickButton: SharedFlow<Unit>
             get() = _didClickButton
-        private val _progressBarVisibility: MutableStateFlow<Boolean?> = MutableStateFlow(null)
+        
+            private val _progressBarVisibility: MutableStateFlow<Boolean?> = MutableStateFlow(null)
         override val progressBarVisibility: Flow<Int>
             get() = _progressBarVisibility.filterNotNull().map { if (it) View.VISIBLE else View.INVISIBLE }
-        override val showBottomSheet: Flow<String>
+        
+            override val showBottomSheet: Flow<String>
             get() = didClickButton
                 .withLatestFrom(text) { _, b ->
                     return@withLatestFrom b
                 }.filter { it.isNotEmpty() }
-        override val enable1: Flow<Boolean>
-            get() = _enable1.filterNotNull().combine(_text.filterNotNull()) { enable1, text ->
+
+        override val switch1Value: Flow<Boolean>
+            get() = _switch1Value.filterNotNull().combine(_text.filterNotNull()) { enable1, text ->
                 enable1 && text.isNotEmpty()
             }
+
+        override val switch1Enabled: Flow<Boolean>
+            get() = _text.map { !it.isNullOrEmpty() }
+
+        override val switch2Enabled: Flow<Boolean>
+            get() = switch1Value.map { it }
+
+        override val switch3Enabled: Flow<Boolean>
+            get() = switch1Value.map { it }
+
         override val enable2: Flow<Boolean>
-            get() = _enable2.filterNotNull().combine(enable1) { enable2, enable1 ->
+            get() = _enable2.filterNotNull().combine(switch1Value) { enable2, enable1 ->
                 enable1 && enable2
             }
         override val enable3: Flow<Boolean>

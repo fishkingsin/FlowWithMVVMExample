@@ -13,15 +13,15 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.example.flowwithmvvmexample.databinding.MySelectionItemLayoutBinding
 import kotlinx.coroutines.launch
 
-class MySelectionBottomSheetFragment : BottomSheetDialogFragment() {
+open class MySelectionBottomSheetFragment : BottomSheetDialogFragment() {
     companion object {
         val TAG: String = MySelectionBottomSheetFragment::class.java.simpleName
     }
 
-    private lateinit var progressBar: ProgressBar
-    private lateinit var adapter: MySelectionListAdapter
+    lateinit var progressBar: ProgressBar
+
     private lateinit var recyclerView: RecyclerView
-    val viewModel: Main.ViewModelType by activityViewModels<Main.ViewModel>()
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -38,14 +38,21 @@ class MySelectionBottomSheetFragment : BottomSheetDialogFragment() {
             recyclerView.isNestedScrollingEnabled = true
 
 
-            adapter = MySelectionListAdapter(viewModel)
-            recyclerView.adapter = adapter
 
-            bindViewModel(viewModel)
+            bindViewModel(recyclerView)
         }
     }
 
-    private fun bindViewModel(viewModel: Main.ViewModelType) {
+    open fun bindViewModel(recyclerView: RecyclerView) {
+    }
+}
+class CustomMySelectionBottomSheetFragment : MySelectionBottomSheetFragment() {
+    val viewModel: Main.ViewModelType by activityViewModels<Main.ViewModel>()
+    private lateinit var adapter: MySelectionListAdapter
+    override fun bindViewModel(recyclerView: RecyclerView) {
+        adapter = MySelectionListAdapter(viewModel)
+        recyclerView.adapter = adapter
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.lifecycleScope.launchWhenStarted {
                 viewModel.outputs.bottomsheetOptions.collect {

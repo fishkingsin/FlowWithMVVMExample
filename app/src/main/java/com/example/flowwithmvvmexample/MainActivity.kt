@@ -8,7 +8,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.flowwithmvvmexample.databinding.ActivityMainBinding
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 
 
@@ -18,7 +17,7 @@ class MainActivity : AppCompatActivity() {
         return Main.ViewModel::class.java
     }
 
-    private var mySelectionBottomSheetFragment: MySelectionBottomSheetFragment? = null
+    private var mySelectionBottomSheetFragment: CustomMySelectionBottomSheetFragment? = null
     private lateinit var viewModel: Main.ViewModelType
     lateinit var binding: ActivityMainBinding
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,21 +62,33 @@ class MainActivity : AppCompatActivity() {
         }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.outputs.text.collect {
-
-                    binding.switch1.isEnabled = it.isNotEmpty()
-
+                viewModel.outputs.switch1Enabled.collect {
+                    binding.switch1.isEnabled = it
                 }
             }
         }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.outputs.enable1.collect {
+                viewModel.outputs.switch2Enabled.collect {
+                    binding.switch2.isEnabled = it
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.outputs.switch3Enabled.collect {
+                    binding.switch3.isEnabled = it
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.outputs.switch1Value.collect {
 
                         binding.switch1.isChecked = it
-                        binding.switch2.isEnabled = it
-                        binding.switch3.isEnabled = it
 
                 }
             }
@@ -103,7 +114,7 @@ class MainActivity : AppCompatActivity() {
     private fun showSelectionBottomSheet() {
         mySelectionBottomSheetFragment?.dismiss()
 
-        MySelectionBottomSheetFragment().let {
+        CustomMySelectionBottomSheetFragment().let {
             it.show(supportFragmentManager, it.tag)
             mySelectionBottomSheetFragment = it
         }
