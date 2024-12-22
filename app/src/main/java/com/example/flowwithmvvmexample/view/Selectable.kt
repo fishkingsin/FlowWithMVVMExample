@@ -1,6 +1,7 @@
 package com.example.flowwithmvvmexample.view
 
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,14 +44,15 @@ fun <T> Selectable(
     var options by remember { mutableStateOf(inputs) }
     LazyColumn {
         // Add 5 items
-        items(options.size) { index ->
-            content(modifier, options[index], selectedIds.contains(options[index])) { isSelected ->
+        items(options) { item ->
+            content(modifier, item, selectedIds.contains(item)) { isSelected ->
 
-                selectedIds = selectionType.function(isSelected, selectedIds, options[index])
+                selectedIds = selectionType.function(isSelected, selectedIds, item)
 
                 println("selectedIds: $selectedIds")
                 onSelectedIdsChanged(selectedIds)
             }
+
         }
     }
 }

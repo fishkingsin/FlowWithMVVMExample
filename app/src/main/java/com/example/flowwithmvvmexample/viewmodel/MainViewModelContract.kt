@@ -33,6 +33,7 @@ interface MainViewModelOutputs {
     val enable2: Flow<Boolean>
     val enable3: Flow<Boolean>
     val selectedIds: Flow<Set<UserGroupMemberPresentable>>
+    val selected: Flow<List<UserGroupMemberPresentable>>
 }
 
 interface MainViewModelType {

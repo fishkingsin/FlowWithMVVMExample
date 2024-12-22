@@ -5,21 +5,30 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.flowwithmvvmexample.ui.theme.FlowWithMVVMExampleTheme
 import com.example.flowwithmvvmexample.viewmodel.MainViewModel
 import com.example.flowwithmvvmexample.viewmodel.MainViewModelType
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 
 @Composable
 fun <ViewModelType : MainViewModelType> MainView(
@@ -35,8 +44,12 @@ fun <ViewModelType : MainViewModelType> MainView(
     val switch3Enable by viewModel.outputs.enable3.collectAsState(false)
     val enableButton by viewModel.outputs.enableButton.collectAsState(false)
     val showBottomSheet by viewModel.outputs.showBottomSheet.collectAsState(false)
-    val options by viewModel.outputs.options2.collectAsState(emptyList())
+    val options: List<UserGroupMemberPresentable> by viewModel.outputs.options2.collectAsState(
+        emptyList()
+    )
     val selectedIds by viewModel.outputs.selectedIds.collectAsState(emptySet())
+    val selected by viewModel.outputs.selected.collectAsState(emptyList())
+    var selectionType by remember { mutableStateOf(SelectionType.Single) }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -62,35 +75,51 @@ fun <ViewModelType : MainViewModelType> MainView(
         ) {
             Text("Show Bottom sheet")
         }
+        SingleChoiceSegmentedButton(modifier) {
+            selectionType = it
+        }
+        LazyColumn {
+            items(selected) { item ->
+                ListItem(
+                    headlineContent = { Text(item.name) },
+                )
+            }
+        }
 
-        BottomSheetWrapper(
-            modifier,
-            showBottomSheet,
-            viewModel.inputs::onDismissClick
-        ) {
-            // MARK: - https://developer.android.com/develop/ui/compose/mental-model
-            Selectable(
-                SelectionType.Single,
-                modifier,
-                selectedIds,
-                options,
-                content = { modifier, item, isSelected, onSelected ->
-                    println("isSelected $isSelected")
-                    BottomSheetViewListItem(
-                        modifier = Modifier,
-                        ListItemDefaults.colors(
-                            containerColor = if (isSelected) Color.Green else Color.Transparent
-                        ),
-                        item = item,
-                    )
-                    {
-                        println("onSelected isSelected $!isSelected")
-                        onSelected(!isSelected)
-                    }
+        BottomSheet(
+            modifier = modifier,
+            selectionType = selectionType,
+            showBottomSheet = showBottomSheet,
+            selectedIds = selectedIds,
+            options = options,
+            inputs = viewModel.inputs
+        )
 
+    }
+}
 
+@Composable
+fun SingleChoiceSegmentedButton(
+    modifier: Modifier = Modifier,
+    onSelectionType: (SelectionType) -> Unit = {}
+) {
+    var selectedIndex: Int by remember { mutableIntStateOf(0) }
+
+    val options = SelectionType.entries.map { it.name }
+
+    SingleChoiceSegmentedButtonRow(modifier = modifier) {
+        options.forEachIndexed { index, label ->
+            SegmentedButton(
+                shape = SegmentedButtonDefaults.itemShape(
+                    index = index,
+                    count = options.size
+                ),
+                onClick = {
+                    selectedIndex = index
+                    onSelectionType(SelectionType.entries[index])
                 },
-                viewModel.inputs::setSelectedId
+                selected = index == selectedIndex,
+                label = { Text(label) }
             )
         }
     }

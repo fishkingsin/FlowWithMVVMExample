@@ -165,6 +165,11 @@ open class MainViewModel(private val userId: String) : ViewModel(), LifecycleObs
             return@withLatestFrom a && b
         }
 
+    override val selected: Flow<List<UserGroupMemberPresentable>>
+        get() = selectedIds.withLatestFrom(selectedOption) { selectedIds, selectedOption ->
+            selectedOption.filter { selectedIds.contains(it) }
+        }
+
 
     private val _didClickButton: MutableSharedFlow<Unit> = MutableSharedFlow(replay = 0)
 
